@@ -1,0 +1,102 @@
+L0:
+    push -1
+    syscall
+L1:
+    :__rep_counter_1₋₁ = +3
+L2:
+    jump L31 if :__rep_counter_1₋₁ <= 0
+L3:
+    jump L13 if :x₋₁ <= :y₋₁
+L4:
+    push -1
+    syscall
+L5:
+    push -1
+    push :x₋₁
+    push :y₋₁
+    syscall
+L6:
+    push -1
+    syscall
+L7:
+    :__rep_counter_2₋₁ = +4
+L8:
+    jump L12 if :__rep_counter_2₋₁ <= 0
+L9:
+    push -1
+    push :x₋₁
+    syscall
+L10:
+    push -1
+    push 90
+    syscall
+L11:
+    :__rep_counter_2₋₁ = :__rep_counter_2₋₁ - 1
+    jump L8
+L12:
+    jump L21
+L13:
+    push -1
+    syscall
+L14:
+    push -1
+    push :y₋₁
+    push :x₋₁
+    syscall
+L15:
+    push -1
+    syscall
+L16:
+    :__rep_counter_3₋₁ = +5
+L17:
+    jump L21 if :__rep_counter_3₋₁ <= 0
+L18:
+    push -1
+    push :p₋₁
+    syscall
+L19:
+    push -1
+    push 72
+    syscall
+L20:
+    :__rep_counter_3₋₁ = :__rep_counter_3₋₁ - 1
+    jump L17
+L21:
+    jump L30 if :z₋₁ < :p₋₁
+L22:
+    push -1
+    syscall
+L23:
+    __tempL23_1₋₁ = :x₋₁ + :z₋₁
+    push -1
+    push :p₋₁
+    push __tempL23_1₋₁
+    syscall
+L24:
+    push -1
+    syscall
+L25:
+    :__rep_counter_4₋₁ = +6
+L26:
+    jump L30 if :__rep_counter_4₋₁ <= 0
+L27:
+    push -1
+    push :x₋₁
+    syscall
+L28:
+    push -1
+    push 60
+    syscall
+L29:
+    :__rep_counter_4₋₁ = :__rep_counter_4₋₁ - 1
+    jump L26
+L30:
+    :x₋₁ = :x₋₁ + 10
+    :y₋₁ = :y₋₁ + 10
+    :z₋₁ = :z₋₁ + 10
+    :__rep_counter_1₋₁ = :__rep_counter_1₋₁ - 1
+    jump L2
+L31:
+    push -1
+    syscall
+L32:

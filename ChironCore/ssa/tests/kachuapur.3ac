@@ -1,0 +1,19 @@
+L0:
+    :i₋₁ = +0
+    :__rep_counter_1₋₁ = +8
+L1:
+    jump L5 if :__rep_counter_1₋₁ <= 0
+L2:
+    :i₋₁ = 1 + :i₋₁
+    push -1
+    push 90
+    syscall
+L3:
+    __tempL3_0₋₁ = :delta₋₁ * :i₋₁
+    push -1
+    push __tempL3_0₋₁
+    syscall
+L4:
+    :__rep_counter_1₋₁ = :__rep_counter_1₋₁ - 1
+    jump L1
+L5:

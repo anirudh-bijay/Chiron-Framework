@@ -1,0 +1,118 @@
+L0:
+    push -1
+    syscall
+L1:
+    push -1
+    push 50
+    push 50
+    syscall
+L2:
+    push -1
+    syscall
+L3:
+    :two₋₁ = +200
+    :one₋₁ = +100
+    push -1
+    push 50
+    syscall
+L4:
+    push -1
+    push 90
+    syscall
+L5:
+    push -1
+    push 50
+    syscall
+L6:
+    push -1
+    push 90
+    syscall
+L7:
+    push -1
+    push 50
+    syscall
+L8:
+    push -1
+    push 90
+    syscall
+L9:
+    push -1
+    push 50
+    syscall
+L10:
+    push -1
+    syscall
+L11:
+    :vara₋₁ = +20
+    :varb₋₁ = +100
+    :varc₋₁ = +60
+    :__rep_counter_1₋₁ = +1
+L12:
+    jump L32 if :__rep_counter_1₋₁ <= 0
+L13:
+    push -1
+    push 0
+    push 0
+    syscall
+L14:
+    push -1
+    syscall
+L15:
+    :__rep_counter_2₋₁ = +6
+L16:
+    jump L30 if :__rep_counter_2₋₁ <= 0
+L17:
+    jump L23 if :vara₋₁ == :varb₋₁
+L18:
+    jump L21 if :vara₋₁ <= :varb₋₁
+L19:
+    push -1
+    push :vara₋₁
+    syscall
+L20:
+    jump L22
+L21:
+    push -1
+    push :varb₋₁
+    syscall
+L22:
+    jump L25
+L23:
+    __tempL23_0₋₁ = :vara₋₁ <= :varc₋₁
+    __tempL23_1₋₁ = :varb₋₁ <= :varc₋₁
+    __tempL23_0₋₁ = __tempL23_0₋₁ or __tempL23_1₋₁
+    jump L25 if not __tempL23_0₋₁
+L24:
+    :vara₋₁ = :varc₋₁ / :vara₋₁
+    :varb₋₁ = :varb₋₁ / :varc₋₁
+    :varc₋₁ = +:varb₋₁
+L25:
+    push -1
+    push :vara₋₁
+    syscall
+L26:
+    push -1
+    push :varb₋₁
+    syscall
+L27:
+    push -1
+    push :varc₋₁
+    syscall
+L28:
+    push -1
+    push :varc₋₁
+    syscall
+L29:
+    :__rep_counter_2₋₁ = :__rep_counter_2₋₁ - 1
+    jump L16
+L30:
+    push -1
+    push 45
+    syscall
+L31:
+    :__rep_counter_1₋₁ = :__rep_counter_1₋₁ - 1
+    jump L12
+L32:
+    push -1
+    syscall
+L33:
