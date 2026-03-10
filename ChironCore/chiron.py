@@ -24,6 +24,7 @@ import cfg.cfgBuilder as cfgB
 import submissionDFA as DFASub
 import submissionAI as AISub
 from sbflSubmission import computeRanks
+from ssa.cfg import _get_ssa_bbs
 import csv
 
 
@@ -60,11 +61,26 @@ if __name__ == "__main__":
         action="store_true",
         help="pretty printing the IR of a Chiron program to stdout (terminal)",
     )
+
     cmdparser.add_argument(
         "-r",
         "--run",
         action="store_true",
         help="execute Chiron program, the figure/shapes the turle draws is shown in a UI.",
+    )
+
+    cmdparser.add_argument(
+        "-mips",
+        "--mips_asm",
+        action="store_true",
+        help="compile Chiron program to MIPS assembly.",
+    )
+
+    cmdparser.add_argument(
+        "-3ac",
+        "--three_address_code",
+        action="store_true",
+        help="convert Chiron IR to three address code and print the result to stdout.",
     )
 
     cmdparser.add_argument(
@@ -88,6 +104,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Run fuzzer on a Chiron program (seed values with '-d' or '--params' flag needed.)",
     )
+
     cmdparser.add_argument(
         "-t",
         "--timeout",
@@ -106,6 +123,7 @@ if __name__ == "__main__":
         type=ast.literal_eval,
         help="pass variable values to Chiron program in python dictionary format",
     )
+
     cmdparser.add_argument(
         "-c",
         "--constparams",
@@ -113,12 +131,14 @@ if __name__ == "__main__":
         type=ast.literal_eval,
         help="pass variable(for which you have to find values using circuit equivalence) values to Chiron program in python dictionary format",
     )
+
     cmdparser.add_argument(
         "-se",
         "--symbolicExecution",
         action="store_true",
         help="Run Symbolic Execution on a Chiron program (seed values with '-d' or '--params' flag needed) to generate test cases along all possible paths.",
     )
+
     # TODO: add additional arguments for parsing command-line arguments
 
     cmdparser.add_argument(
@@ -127,6 +147,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Run abstract interpretation on a Chiron Program.",
     )
+
     cmdparser.add_argument(
         "-dfa",
         "--dataFlowAnalysis",
@@ -140,16 +161,20 @@ if __name__ == "__main__":
         action="store_true",
         help="Run Spectrum-basedFault localizer on Chiron program",
     )
+
     cmdparser.add_argument("-bg", "--buggy", help="buggy Chiron program path", type=str)
+
     cmdparser.add_argument(
         "-vars",
         "--inputVarsList",
         help="A list of input variables of given Chiron program",
         type=str,
     )
+
     cmdparser.add_argument(
         "-nt", "--ntests", help="number of tests to generate", default=10, type=int
     )
+
     cmdparser.add_argument(
         "-pop",
         "--popsize",
@@ -157,30 +182,36 @@ if __name__ == "__main__":
         default=100,
         type=int,
     )
+
     cmdparser.add_argument(
         "-cp", "--cxpb", help="cross-over probability", default=1.0, type=float
     )
+
     cmdparser.add_argument(
         "-mp", "--mutpb", help="mutation probability", default=1.0, type=float
     )
+
     cmdparser.add_argument(
         "-cfg_gen",
         "--control_flow",
         help="Generate the CFG of the given turtle program",
         action="store_true",
     )
+
     cmdparser.add_argument(
         "-cfg_dump",
         "--dump_cfg",
         help="Generate the CFG of the given turtle program",
         action="store_true",
     )
+
     cmdparser.add_argument(
         "-dump",
         "--dump_ir",
         help="Dump the IR to a .kw (pickle file)",
         action="store_true",
     )
+
     cmdparser.add_argument(
         "-ng",
         "--ngen",
@@ -188,6 +219,7 @@ if __name__ == "__main__":
         default=100,
         type=int,
     )
+
     cmdparser.add_argument(
         "-vb",
         "--verbose",
@@ -392,3 +424,14 @@ if __name__ == "__main__":
             writer = csv.writer(file)
             writer.writerows(spectrum)
         print("DONE..")
+
+    if args.mips_asm or args.three_address_code:
+        # tac = getTAC(irHandler.ir)
+
+        if args.three_address_code:
+            print("\n==== Three Address Code ====")
+            _get_ssa_bbs(irHandler.ir)
+
+        if args.mips_asm:
+            # TODO
+            raise NotImplementedError("MIPS assembly generation not implemented yet.")
