@@ -134,25 +134,25 @@ class jump_statement(statement):
     def target1(self) -> label:
         '''The target basic block label for the true case.'''
         if not self.is_conditional:
-            raise ValueError("target1 cannot be accessed for a conditional jump")
+            raise ValueError("target1 cannot be accessed for an unconditional jump")
         
         return self._target1
 
     @property
-    def target2(self) -> label | None:
+    def target2(self) -> label:
         '''The target basic block label for the false case.'''
         if not self.is_conditional:
-            raise ValueError("target2 cannot be accessed for a conditional jump")
+            raise ValueError("target2 cannot be accessed for an unconditional jump")
         
-        return self._target2
+        return self._target2 # type: ignore
 
     @property
-    def cond(self) -> condition | None:
+    def cond(self) -> condition:
         '''The condition for a conditional jump.'''
         if not self.is_conditional:
-            raise ValueError("cond cannot be accessed for a conditional jump")
+            raise ValueError("cond cannot be accessed for an unconditional jump")
         
-        return self._cond
+        return self._cond # type: ignore
     
     @property
     def target(self) -> label:
