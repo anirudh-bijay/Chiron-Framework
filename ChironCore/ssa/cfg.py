@@ -86,7 +86,7 @@ def _get_ssa_bbs(ir: list[tuple[ChironAST.Instruction, int]]) \
         bb = []
         for line, instr in enumerate(ir[basic_block_boundaries[i] : basic_block_boundaries[i + 1]]):
             bb.extend(to_statement(instr, i, basic_block_boundaries))
-        print(f"L{i}:\n    " + "\n    ".join([str(stmt) for stmt in bb]))
+        print(f"L{i}:\n    " + "\n    ".join(str(stmt) for stmt in bb))
 
     # return [
     #     # Tuples of (node, node_attr_dict) for insertion into the graph.
