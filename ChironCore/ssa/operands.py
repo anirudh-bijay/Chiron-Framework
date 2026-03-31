@@ -28,8 +28,13 @@ class variable(operand):
 
     @property
     def index(self) -> int:
-        '''The unique index of this variable.'''
+        '''The SSA version of this variable.'''
         return self._index
+    
+    @index.setter
+    def index(self, new_index: int):
+        '''Set a new index for this variable.'''
+        self._index = new_index
 
     @property
     def name(self) -> str:
@@ -39,7 +44,7 @@ class variable(operand):
     def __str__(self):
         '''String representation of the variable.'''
         subscript_map = str.maketrans("-0123456789", "₋₀₁₂₃₄₅₆₇₈₉")
-        return self.name + str(self.index).translate(subscript_map)
+        return self.name + ('' if self.index == -1 else str(self.index).translate(subscript_map))
     
     def __eq__(self, value):
         '''Equality comparison for variables.'''
@@ -47,6 +52,9 @@ class variable(operand):
             return NotImplemented
         
         return self.index == value.index and self.name == value.name
+    
+    def __hash__(self) -> int:
+        return hash((self.index, self.name))
     
 class constant(operand):
     '''
