@@ -1,0 +1,86 @@
+:n = 1
+:a = -50
+repeat 100 [
+    if (:n * 3 == 63 || :n * 6 == 36) [
+        forward 100
+        right 90
+        :a = 17
+    ] else [
+        if (:n * 3 == 64 || (:n * 7 == 49 && :n + 1 != 8)) [
+            backward 100
+            left 90
+            :a = :a + :n + :a
+        ]
+    ]
+]
+
+goto (:a, :a)
+
+========= SSA CFG =========
+L0:
+  :n₀ = +1
+  :a₀ = -50
+  :__rep_counter_1₀ = +100
+L1:
+  __tempL9_0₀ = φ(__tempL9_0₂)
+  __tempL6_2₀ = φ(__tempL6_2₃)
+  __tempL6_1₀ = φ(__tempL6_1₄)
+  __tempL6_0₀ = φ(__tempL6_0₄)
+  __tempL2_1₀ = φ(__tempL2_1₂)
+  __tempL2_0₀ = φ(__tempL2_0₃)
+  :__rep_counter_1₁ = φ(:__rep_counter_1₂, :__rep_counter_1₀)
+  :a₁ = φ(:a₄, :a₀)
+  jump L11 if :__rep_counter_1₁ <= 0
+L2:
+  __tempL2_0₁ = :n₀ * 3
+  __tempL2_0₂ = __tempL2_0₁ == 63
+  __tempL2_1₁ = :n₀ * 6
+  __tempL2_1₂ = __tempL2_1₁ == 36
+  __tempL2_0₃ = __tempL2_0₂ or __tempL2_1₂
+  jump L6 if not __tempL2_0₃
+L3:
+  push 33
+  push 100
+  syscall
+L4:
+  push 36
+  push 90
+  syscall
+L5:
+  :a₂ = +17
+  jump L10
+L6:
+  __tempL6_0₁ = :n₀ * 3
+  __tempL6_0₂ = __tempL6_0₁ == 64
+  __tempL6_1₁ = :n₀ * 7
+  __tempL6_1₂ = __tempL6_1₁ == 49
+  __tempL6_2₁ = :n₀ + 1
+  __tempL6_2₂ = __tempL6_2₁ != 8
+  __tempL6_1₃ = __tempL6_1₂ and __tempL6_2₂
+  __tempL6_0₃ = __tempL6_0₂ or __tempL6_1₃
+  jump L10 if not __tempL6_0₃
+L7:
+  push 34
+  push 100
+  syscall
+L8:
+  push 35
+  push 90
+  syscall
+L9:
+  __tempL9_0₁ = :a₁ + :n₀
+  :a₃ = __tempL9_0₁ + :a₁
+L10:
+  __tempL9_0₂ = φ(__tempL9_0₀, __tempL9_0₁)
+  __tempL6_2₃ = φ(__tempL6_2₂, __tempL6_2₀)
+  __tempL6_1₄ = φ(__tempL6_1₃, __tempL6_1₀)
+  __tempL6_0₄ = φ(__tempL6_0₀, __tempL6_0₃)
+  :a₄ = φ(:a₁, :a₂, :a₃)
+  :__rep_counter_1₂ = :__rep_counter_1₁ - 1
+  jump L1
+L11:
+  push 37
+  push :a₁
+  push :a₁
+  syscall
+L12:

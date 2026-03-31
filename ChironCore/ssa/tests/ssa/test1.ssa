@@ -1,0 +1,9 @@
+L0:
+  :x₀ = +1
+  :y₀ = +2
+  :z₀ = :x₀ + :y₀
+  push 33
+  push :z₀
+  syscall
+L1:
+  :z₁ = :z₀ * 2
