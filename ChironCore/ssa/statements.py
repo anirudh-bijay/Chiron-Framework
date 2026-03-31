@@ -4,6 +4,7 @@ from .label import label
 from .operands import operand, variable
 from .operators import operator
 
+
 class statement(ABC):
     '''
     A statement is an abstract base class for all statements in the SSA
@@ -87,8 +88,10 @@ class assignment_statement(statement):
         
 class jump_statement(statement):
     '''
-    An unconditional jump statement in SSA form. This is a statement of
-    the form ``jump target``, where target is a basic block label.
+    An conditional or unconditional jump statement in SSA form.
+    This is a statement of the form ``jump target``, where ``target``
+    is a basic block label, or ``jump target if condition``,
+    where ``condition`` is a logical expression.
     '''
 
     class condition:
