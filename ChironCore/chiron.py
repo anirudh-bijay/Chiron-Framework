@@ -24,7 +24,8 @@ import cfg.cfgBuilder as cfgB
 import submissionDFA as DFASub
 import submissionAI as AISub
 from sbflSubmission import computeRanks
-from ssa.cfg import _get_ssa_bbs
+from ssa.cfg import tac_cfg_from_ir
+from ssa.ssa_cfg import ssa_cfg_from_tac_cfg
 import csv
 
 
@@ -81,6 +82,13 @@ if __name__ == "__main__":
         "--three_address_code",
         action="store_true",
         help="convert Chiron IR to three address code and print the result to stdout.",
+    )
+
+    cmdparser.add_argument(
+        "-ssa",
+        "--ssa",
+        action="store_true",
+        help="convert Chiron IR to SSA form and print the result to stdout.",
     )
 
     cmdparser.add_argument(
@@ -425,12 +433,20 @@ if __name__ == "__main__":
             writer.writerows(spectrum)
         print("DONE..")
 
-    if args.mips_asm or args.three_address_code:
+    if args.mips_asm or args.three_address_code or args.ssa:
         # tac = getTAC(irHandler.ir)
 
         if args.three_address_code:
             print("\n==== Three Address Code ====")
-            _get_ssa_bbs(irHandler.ir)
+            tac_cfg = tac_cfg_from_ir(irHandler.ir, print_debug=True)
+        else:
+            tac_cfg = tac_cfg_from_ir(irHandler.ir)
+            
+        if args.ssa:
+            print("\n========= SSA CFG =========")
+            ssa_cfg_from_tac_cfg(tac_cfg, print_debug=True)
+        else:
+            ssa_cfg_from_tac_cfg(tac_cfg)
 
         if args.mips_asm:
             # TODO

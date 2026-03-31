@@ -1,10 +1,15 @@
+import sys
+
 import networkx as nx
+from ChironAST import ChironAST
 
 from .basic_block import basic_block
 from .label import label
-from .statements import statement
+from .renumber import renumber_variables
+from .statements import (jump_statement, statement, syscall_statement,
+                         φ_statement)
 from .to_statement import to_statement
-from ChironAST import ChironAST
+
 
 def _get_leaders(ir: list[tuple[ChironAST.Instruction, int]]) -> list[int]:
     '''
@@ -21,10 +26,10 @@ def _get_leaders(ir: list[tuple[ChironAST.Instruction, int]]) -> list[int]:
 
     for i, instr in enumerate(ir):
         if instr[1] != 1:
-            # If the instruction is a jump/branch, add the target as a boundary
+            # If the instruction is a jump/branch, add the target as a leader
             boundaries.append(i + instr[1])
 
-            # Add the next instruction as a boundary
+            # Add the next instruction as a leader
             boundaries.append(i + 1)
 
             # NOTE: If the instruction is a jump/branch but its target is the
@@ -44,7 +49,7 @@ def _get_leaders(ir: list[tuple[ChironAST.Instruction, int]]) -> list[int]:
 
     return sorted(set(boundaries))
 
-def _get_ssa_bbs(ir: list[tuple[ChironAST.Instruction, int]]) \
+def _get_tac_bbs(ir: list[tuple[ChironAST.Instruction, int]], print_debug: bool = False) \
     -> list[tuple[label, dict[str, basic_block]]]:
     '''
     Create basic blocks from the IR based on the identified boundaries.
@@ -65,15 +70,10 @@ def _get_ssa_bbs(ir: list[tuple[ChironAST.Instruction, int]]) \
 
     version: dict[str, int] = {}            # Mapping of variable names to their current SSA version numbers
 
-    # BB-wise list of variables that are live at the end of the BB along with
-    # their versions, used to determine sources for phi-function insertion.
-    #
-    # All variables are actually assumed alive at the end of the BB; the key
-    # information here is to find the last assigned index for each variable in the
-    # BB, which will be used as the latest version of the variable for phi-function
-    # insertion. The "liveness", therefore, corresponds to the SSA version of the
-    # variable determined by the index.
-    phi_args: list[dict[str, int]] = []
+    # BB-wise list of variables that are used in the BB (on LHS) along with
+    # their first SSA versions in the BB, used to determine destinations for
+    # phi-function insertion.
+    phi_args: list[dict[str, set[int]]] = []
 
     # BB-wise list of variables that are used in the BB (on RHS) along with
     # their first SSA versions in the BB, used to determine destinations for
@@ -86,7 +86,59 @@ def _get_ssa_bbs(ir: list[tuple[ChironAST.Instruction, int]]) \
         bb = []
         for line, instr in enumerate(ir[basic_block_boundaries[i] : basic_block_boundaries[i + 1]]):
             bb.extend(to_statement(instr, i, basic_block_boundaries))
-        print(f"L{i}:\n    " + "\n    ".join(str(stmt) for stmt in bb))
+        if print_debug:
+            print(f"L{i}:\n    " + "\n    ".join(str(stmt) for stmt in bb)) # Print tac statements for debugging
+        basic_blocks.append((label(i), {"basic_block": basic_block(bb)}))
+
+    #     seen_vars: set[str] = set() # Set of variable names seen so far in this BB
+
+    #     # List of variables that are live at the end of the BB along with
+    #     # their versions, used to determine sources for phi-function insertion in
+    #     # successor BB.
+    #     #
+    #     # All variables are actually assumed alive at the end of the BB; the key
+    #     # information here is to find the last assigned index for each variable in the
+    #     # BB, which will be used as the latest version of the variable for phi-function
+    #     # insertion. The "liveness", therefore, corresponds to the SSA version of the
+    #     # variable determined by the index.
+    #     next_phi_args: dict[str, int] = {}
+
+    #     phi_targets.append({})
+
+    #     for i in range(len(bb)):
+    #         renumber_variables(bb[i], version, next_phi_args, phi_targets[i], seen_vars)
+
+    #     # See NetworkX construction in :ssa_cfg_from_ir():.
+    #     basic_blocks.append((label(i), {"basic_block": basic_block(bb)}))
+    
+    # for i in range(len(basic_blocks) - 1):
+    #     # Add φ-statements for variables that are live at the end of the current BB and used in the next BB
+    #     for var, version in phi_args[i].items():
+    #         if var in phi_targets[i + 1]:
+    #             bb = basic_blocks[i + 1][1]["basic_block"]
+    #             bb.statements.insert(0, φ_statement(variable(var, version), [variable(var, version)]))
+    #             print(f"Inserted φ-statement for variable {var} in BB {i + 1} with version {version}") # Debugging
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
     # return [
     #     # Tuples of (node, node_attr_dict) for insertion into the graph.
@@ -100,9 +152,9 @@ def _get_ssa_bbs(ir: list[tuple[ChironAST.Instruction, int]]) \
     # ]
     return basic_blocks
 
-def ssa_cfg_from_ir(ir: list[tuple[ChironAST.Instruction, int]]) -> nx.DiGraph[label]:
+def tac_cfg_from_ir(ir: list[tuple[ChironAST.Instruction, int]], print_debug: bool = False) -> nx.DiGraph[label]:
     '''
-    Construct a control flow graph (CFG) for the SSA form of the IR.
+    Construct a control flow graph (CFG) for the three-address code form of the IR.
     The CFG is represented as a directed graph where the nodes are
     basic blocks and the edges represent control flow between the blocks.
 
@@ -113,11 +165,24 @@ def ssa_cfg_from_ir(ir: list[tuple[ChironAST.Instruction, int]]) -> nx.DiGraph[l
     '''
 
     # Create basic blocks from the IR
-    basic_blocks = _get_ssa_bbs(ir)
+    basic_blocks = _get_tac_bbs(ir, print_debug)
 
     del ir # Free memory used by the IR list
 
     cfg: nx.DiGraph[label] = nx.DiGraph()
     cfg.add_nodes_from(basic_blocks)
+    for i in range(len(basic_blocks) - 1):
+        bb = basic_blocks[i][1]["basic_block"].instructions
+        if not bb:
+            continue
+        last_stmt = bb[-1]
+        if isinstance(last_stmt, jump_statement):
+            if last_stmt.is_conditional:
+                cfg.add_edge(label(i), label(last_stmt.target1)) # Fall-through edge
+                cfg.add_edge(label(i), label(last_stmt.target2)) # Jump edge
+            else:
+                cfg.add_edge(label(i), label(last_stmt.target))  # Jump edge
+        else:
+            cfg.add_edge(label(i), label(i + 1))
 
     return cfg
