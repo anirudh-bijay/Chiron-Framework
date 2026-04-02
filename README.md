@@ -142,7 +142,7 @@ To pass parameters (input params) for running a turtle program, use the `-d` fla
 
 ```bash
 $ cd ChironCore
-$ ./chiron.py -r ./example/example1.tl -d '{":x": 20, "y": 30, ":z": 20, ":p": 40}'
+$ ./chiron.py -r ./example/example1.tl -d '{":x": 20, ":y": 30, ":z": 20, ":p": 40}'
 ```
 
 If you are using `uv` package manager, which we highly recommend using, run `Chiron` using the following commands.
@@ -150,7 +150,7 @@ Always prefix with `uv run` instead of running with `python`.
 
 ```bash
 $ cd ChironCore
-$ uv run chiron.py -r ./example/example1.tl -d '{":x": 20, "y": 30, ":z": 20, ":p": 40}'
+$ uv run chiron.py -r ./example/example1.tl -d '{":x": 20, ":y": 30, ":z": 20, ":p": 40}'
 ```
 
 ### See help for other command line options
