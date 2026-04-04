@@ -3,7 +3,7 @@ from .statements import (assignment_statement, jump_statement, pop_statement,
                          push_statement, statement, φ_statement)
 
 
-def _src_variables(stmt: statement) -> list[variable]:
+def src_variables(stmt: statement) -> list[variable]:
     '''
     Get the source variables (variables used on the right-hand side) of the given statement.
     '''
@@ -50,7 +50,7 @@ def renumber_variables(
     This function modifies the statement in place.
     '''
     
-    srcs = _src_variables(stmt)
+    srcs = src_variables(stmt)
     dest = _dest_variable(stmt)
 
     for src in srcs:
