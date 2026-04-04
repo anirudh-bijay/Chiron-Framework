@@ -92,6 +92,13 @@ if __name__ == "__main__":
     )
 
     cmdparser.add_argument(
+        "-no_ssa_dce",
+        "--no_ssa_dce",
+        action="store_true",
+        help="do not perform dead code elimination in SSA form; print the semi-pruned SSA form.",
+    )
+
+    cmdparser.add_argument(
         "-gr",
         "--fuzzer_gen_rand",
         action="store_true",
@@ -444,7 +451,7 @@ if __name__ == "__main__":
             
         if args.ssa:
             print("\n========= SSA CFG =========")
-            ssa_cfg_from_tac_cfg(tac_cfg, print_debug=True)
+            ssa_cfg_from_tac_cfg(tac_cfg, dce=not args.no_ssa_dce, print_debug=True)
         else:
             ssa_cfg_from_tac_cfg(tac_cfg)
 
