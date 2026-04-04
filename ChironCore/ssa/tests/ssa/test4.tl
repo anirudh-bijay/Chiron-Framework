@@ -14,5 +14,3 @@ repeat 10000 [
         ]
     ]
 ]
-
-forward :mid

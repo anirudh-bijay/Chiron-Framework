@@ -1,0 +1,14 @@
+L0:
+  :x₀ = +<undefined>
+  jump L2 if 5 != 2
+L1:
+  :x₁ = +9
+  jump L3
+L2:
+
+L3:
+  :x₂ = φ(:x₁, :x₀)
+  push 33
+  push :x₂
+  syscall
+L4:

@@ -1,0 +1,13 @@
+L0:
+  :y₀ = +<undefined>
+  jump L2 if 5 != 2
+L1:
+  jump L3
+L2:
+  :y₁ = +25
+L3:
+  :y₂ = φ(:y₁, :y₀)
+  push 33
+  push :y₂
+  syscall
+L4:

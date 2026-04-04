@@ -1,0 +1,15 @@
+L1:
+  jump L8
+L2:
+  jump L1
+L3:
+  jump L7
+L4:
+  jump L1
+L5:
+  jump L7
+L6:
+
+L7:
+  jump L1
+L8:
