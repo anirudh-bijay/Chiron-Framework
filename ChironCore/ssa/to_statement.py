@@ -1,10 +1,13 @@
 from typing import Any, Generator
 
-from .label import label
-from .operands import operand, variable, integer_constant
-from .operators import operator
-from .statements import statement, assignment_statement, jump_statement, syscall_statement, push_statement, nop_statement
 from ChironAST import ChironAST
+
+from .label import label
+from .operands import integer_constant, operand, variable
+from .operators import operator
+from .statements import (assignment_statement, jump_statement, nop_statement,
+                         push_statement, statement, syscall_statement)
+
 
 ############### PLACEHOLDER IMPLEMENTATIONS ###############
 def syscall_num(instr: ChironAST.MoveCommand | ChironAST.PenCommand | ChironAST.GotoCommand) -> integer_constant:
