@@ -2,6 +2,7 @@ from typing import Iterable
 
 from .statements import statement
 
+
 class basic_block:
     '''
     A basic block is a sequence of instructions with exactly one entry

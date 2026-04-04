@@ -1,11 +1,11 @@
 import networkx as nx
 
-from .renumber import src_variables
-
+from .basic_block import basic_block
 from .label import label
 from .operands import variable
-from .basic_block import basic_block
+from .renumber import src_variables
 from .statements import assignment_statement, pop_statement
+
 
 def get_varinfo(cfg: nx.DiGraph[label]) -> dict[str, dict[variable, set[label]] | set[variable]]:
     '''

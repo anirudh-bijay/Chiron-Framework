@@ -1,5 +1,6 @@
 from typing import Any
 
+
 class operator:
     '''
     An operator in the SSA form of the program. An operator has
