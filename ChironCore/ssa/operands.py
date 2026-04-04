@@ -101,3 +101,25 @@ class integer_constant(constant):
             return NotImplemented
         
         return self.value == value.value
+    
+class uninitialised_constant(constant):
+    '''
+    An uninitialised constant in the SSA form of the program.
+    As ChironLang does not have scoping, it is possible for a
+    variable to be used before it is defined. While the
+    Python runtime would raise an error in this case, we want
+    to be able to represent this situation in our SSA form.
+    
+    Uninitialised constants should be used only in assignment
+    statements at the beginning of the program. Use the copy
+    (unary +) operator.
+    
+    Ideally, the instruction selection phase should ignore
+    such assignments.
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self) -> str:
+        return "<undefined>"
