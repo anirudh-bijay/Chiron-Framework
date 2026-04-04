@@ -1,0 +1,22 @@
+L0:
+  :delta₀ = +<undefined>
+  :i₁ = +0
+  :__rep_counter_1₁ = +8
+L1:
+  :__rep_counter_1₂ = φ(:__rep_counter_1₃, :__rep_counter_1₁)
+  :i₂ = φ(:i₃, :i₁)
+  jump L5 if :__rep_counter_1₂ <= 0
+L2:
+  :i₃ = 1 + :i₂
+  push 36
+  push 90
+  syscall
+L3:
+  __tempL3_0₀ = :delta₀ * :i₃
+  push 33
+  push __tempL3_0₀
+  syscall
+L4:
+  :__rep_counter_1₃ = :__rep_counter_1₂ - 1
+  jump L1
+L5:

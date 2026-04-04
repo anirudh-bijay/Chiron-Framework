@@ -1,0 +1,113 @@
+L0:
+  :x₀ = +<undefined>
+  :y₀ = +<undefined>
+  :z₀ = +<undefined>
+  :p₀ = +<undefined>
+  push 39
+  syscall
+L1:
+  :__rep_counter_1₁ = +3
+L2:
+  :z₁ = φ(:z₂, :z₀)
+  :y₁ = φ(:y₂, :y₀)
+  :x₁ = φ(:x₂, :x₀)
+  :__rep_counter_1₂ = φ(:__rep_counter_1₃, :__rep_counter_1₁)
+  jump L31 if :__rep_counter_1₂ <= 0
+L3:
+  jump L13 if :x₁ <= :y₁
+L4:
+  push 38
+  syscall
+L5:
+  push 37
+  push :x₁
+  push :y₁
+  syscall
+L6:
+  push 39
+  syscall
+L7:
+  :__rep_counter_2₂ = +4
+L8:
+  :__rep_counter_2₃ = φ(:__rep_counter_2₄, :__rep_counter_2₂)
+  jump L12 if :__rep_counter_2₃ <= 0
+L9:
+  push 33
+  push :x₁
+  syscall
+L10:
+  push 35
+  push 90
+  syscall
+L11:
+  :__rep_counter_2₄ = :__rep_counter_2₃ - 1
+  jump L8
+L12:
+  jump L21
+L13:
+  push 38
+  syscall
+L14:
+  push 37
+  push :y₁
+  push :x₁
+  syscall
+L15:
+  push 39
+  syscall
+L16:
+  :__rep_counter_3₂ = +5
+L17:
+  :__rep_counter_3₃ = φ(:__rep_counter_3₄, :__rep_counter_3₂)
+  jump L21 if :__rep_counter_3₃ <= 0
+L18:
+  push 33
+  push :p₀
+  syscall
+L19:
+  push 35
+  push 72
+  syscall
+L20:
+  :__rep_counter_3₄ = :__rep_counter_3₃ - 1
+  jump L17
+L21:
+  jump L30 if :z₁ < :p₀
+L22:
+  push 38
+  syscall
+L23:
+  __tempL23_1₀ = :x₁ + :z₁
+  push 37
+  push :p₀
+  push __tempL23_1₀
+  syscall
+L24:
+  push 39
+  syscall
+L25:
+  :__rep_counter_4₂ = +6
+L26:
+  :__rep_counter_4₃ = φ(:__rep_counter_4₄, :__rep_counter_4₂)
+  jump L30 if :__rep_counter_4₃ <= 0
+L27:
+  push 34
+  push :x₁
+  syscall
+L28:
+  push 35
+  push 60
+  syscall
+L29:
+  :__rep_counter_4₄ = :__rep_counter_4₃ - 1
+  jump L26
+L30:
+  :x₂ = :x₁ + 10
+  :y₂ = :y₁ + 10
+  :z₂ = :z₁ + 10
+  :__rep_counter_1₃ = :__rep_counter_1₂ - 1
+  jump L2
+L31:
+  push 38
+  syscall
+L32:

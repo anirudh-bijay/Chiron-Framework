@@ -1,0 +1,23 @@
+L0:
+  :steps₀ = +<undefined>
+  :radius₀ = +<undefined>
+  :cnt₁ = +0
+  :__rep_counter_1₁ = +:steps₀
+L1:
+  :__rep_counter_1₂ = φ(:__rep_counter_1₃, :__rep_counter_1₁)
+  :cnt₂ = φ(:cnt₁, :cnt₃)
+  jump L5 if :__rep_counter_1₂ <= 0
+L2:
+  :cnt₃ = :cnt₂ + 1
+  __tempL2_0₀ = 1 + :cnt₃
+  push 33
+  push __tempL2_0₀
+  syscall
+L3:
+  push 36
+  push :radius₀
+  syscall
+L4:
+  :__rep_counter_1₃ = :__rep_counter_1₂ - 1
+  jump L1
+L5:

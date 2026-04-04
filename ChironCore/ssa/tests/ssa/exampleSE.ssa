@@ -1,0 +1,7 @@
+L0:
+  jump L3
+L1:
+  jump L3
+L2:
+
+L3:
