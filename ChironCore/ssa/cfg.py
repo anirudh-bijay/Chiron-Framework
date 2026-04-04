@@ -56,9 +56,22 @@ def _get_tac_bbs(ir: list[tuple[ChironAST.Instruction, int]], print_debug: bool 
 
     :param list[tuple[ChironAST.Instruction, int]] ir:
         The list of IR instructions to convert to basic blocks.
+    :param bool print_debug:
+        Whether to print the generated 3AC statements.
     :return list[tuple[label, dict[str, basic_block]]]:
         A list of basic blocks created from the IR.
     '''
+
+    # We add a dummy no-op at the beginning to make an extra
+    # basic block for any code that needs to be inserted at
+    # the beginning. If there are no jumps to
+    # the first instruction in the original IR, no separate
+    # basic block would be created, which is alright.
+    #
+    # One can argue this is unnecessary since the language
+    # does not provide constructs capable of generating jumps
+    # to the first instruction, but for generality's sake...
+    ir.insert(0, (ChironAST.NoOpCommand(), 1))
 
     # Locate basic block boundaries in the IR
     basic_block_boundaries = _get_leaders(ir)
@@ -90,66 +103,6 @@ def _get_tac_bbs(ir: list[tuple[ChironAST.Instruction, int]], print_debug: bool 
             print(f"L{i}:\n    " + "\n    ".join(str(stmt) for stmt in bb)) # Print tac statements for debugging
         basic_blocks.append((label(i), {"basic_block": basic_block(bb)}))
 
-    #     seen_vars: set[str] = set() # Set of variable names seen so far in this BB
-
-    #     # List of variables that are live at the end of the BB along with
-    #     # their versions, used to determine sources for phi-function insertion in
-    #     # successor BB.
-    #     #
-    #     # All variables are actually assumed alive at the end of the BB; the key
-    #     # information here is to find the last assigned index for each variable in the
-    #     # BB, which will be used as the latest version of the variable for phi-function
-    #     # insertion. The "liveness", therefore, corresponds to the SSA version of the
-    #     # variable determined by the index.
-    #     next_phi_args: dict[str, int] = {}
-
-    #     phi_targets.append({})
-
-    #     for i in range(len(bb)):
-    #         renumber_variables(bb[i], version, next_phi_args, phi_targets[i], seen_vars)
-
-    #     # See NetworkX construction in :ssa_cfg_from_ir():.
-    #     basic_blocks.append((label(i), {"basic_block": basic_block(bb)}))
-    
-    # for i in range(len(basic_blocks) - 1):
-    #     # Add φ-statements for variables that are live at the end of the current BB and used in the next BB
-    #     for var, version in phi_args[i].items():
-    #         if var in phi_targets[i + 1]:
-    #             bb = basic_blocks[i + 1][1]["basic_block"]
-    #             bb.statements.insert(0, φ_statement(variable(var, version), [variable(var, version)]))
-    #             print(f"Inserted φ-statement for variable {var} in BB {i + 1} with version {version}") # Debugging
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-    # return [
-    #     # Tuples of (node, node_attr_dict) for insertion into the graph.
-    #     # node = label of the basic block, node_attr_dict = {'basic_block': basic_block(statements)}
-    #     (label(i), {"basic_block": basic_block(
-    #         # Convert IR statements to SSA statements for this basic block
-    #         _ssa_bb_from_ir_bb(stmt, basic_block_boundaries, variables)
-    #         for stmt in ir[basic_block_boundaries[i] : basic_block_boundaries[i + 1]]
-    #     )})
-    #     for i in range(len(basic_block_boundaries) - 1)
-    # ]
     return basic_blocks
 
 def tac_cfg_from_ir(ir: list[tuple[ChironAST.Instruction, int]], print_debug: bool = False) -> nx.DiGraph[label]:
