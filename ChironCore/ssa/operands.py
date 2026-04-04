@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class operand(ABC):
     '''
     An operand in the SSA form of the program. This is an abstract base
@@ -45,6 +46,9 @@ class variable(operand):
         '''String representation of the variable.'''
         subscript_map = str.maketrans("-0123456789", "₋₀₁₂₃₄₅₆₇₈₉")
         return self.name + ('' if self.index == -1 else str(self.index).translate(subscript_map))
+    
+    def __repr__(self):
+        return str(self)
     
     def __eq__(self, value):
         '''Equality comparison for variables.'''
