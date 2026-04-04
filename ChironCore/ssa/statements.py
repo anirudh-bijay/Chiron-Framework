@@ -237,7 +237,7 @@ class pop_statement(statement):
     
 class φ_statement(statement):
     '''
-    A φ statement in SSA form. This is a statement of the form
+    A φ-statement in SSA form. This is a statement of the form
     ``dest = φ(src1, src2, ...)``, where ``dest`` is a variable and ``src1``,
     ``src2``, etc. are source variables from the predecessor basic blocks.
     '''
