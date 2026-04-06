@@ -23,9 +23,8 @@ class basic_block:
         '''
         Initialise a basic block with a sequence of instructions.
 
-        :param int label: The unique label for this basic block.
-        :param list instructions: The sequence of instructions in
-            this basic block.
+        :param Iterable[statement] instructions: The sequence of
+            instructions in this basic block.
         '''
 
         self.instructions = list(instructions)
