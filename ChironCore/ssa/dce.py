@@ -135,9 +135,30 @@ def _sweep(cfg: nx.DiGraph[label]) -> None:
                     inscount += 1
                     data["useful"] = True
         del bb.instructions[inscount:]
-    
+
+    # Reconstruct the CFG.
+    cfg.clear_edges()
+
+    for node, data in cfg.nodes(data=True):
+        bb: basic_block = data["basic_block"]
+
+        last_stmt = bb.instructions[-1] if bb.instructions else None
+        if isinstance(last_stmt, jump_statement):
+            if last_stmt.is_conditional:
+                cfg.add_edge(node, last_stmt.target1)
+                cfg.add_edge(node, last_stmt.target2)
+            else:
+                cfg.add_edge(node, last_stmt.target)
+        elif node != cfg.order() - 1:   # Not the exit node.
+            cfg.add_edge(node, label(node + 1)) # Fallthrough to the next BB.
+
+    # Remove unreachable BBs.
+    reachable = set(nx.dfs_preorder_nodes(cfg, label(0)))
+    unreachable = [node for node in cfg.nodes if node not in reachable]
+    cfg.remove_nodes_from(unreachable)
+
     # Cleanup
-    for node in cfg.nodes():
+    for node in cfg.nodes:
         del cfg.nodes[node]["useful"]
 
 def eliminate_dead_code(cfg: nx.DiGraph[label]) -> None:
