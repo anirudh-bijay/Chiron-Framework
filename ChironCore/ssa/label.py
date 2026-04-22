@@ -12,3 +12,6 @@ class label(int):
     def __str__(self):
         '''String representation of a label.'''
         return f"L{int(self)}"
+    
+    def __repr__(self) -> str:
+        return str(self)
