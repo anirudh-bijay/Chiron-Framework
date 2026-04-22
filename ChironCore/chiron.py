@@ -25,7 +25,11 @@ import submissionDFA as DFASub
 import submissionAI as AISub
 from sbflSubmission import computeRanks
 from ssa.cfg import tac_cfg_from_ir
+from ssa.statements import φ_statement
 from ssa.ssa_cfg import ssa_cfg_from_tac_cfg
+from mips.instsel import mips_from_tac_cfg
+from mips.regalloc import colour_cfg, out_of_ssa
+from mips.write import write_to_file
 import csv
 
 
@@ -456,5 +460,27 @@ if __name__ == "__main__":
             ssa_cfg_from_tac_cfg(tac_cfg)
 
         if args.mips_asm:
-            # TODO
-            raise NotImplementedError("MIPS assembly generation not implemented yet.")
+            print("\n========= MIPS Assembly =========")
+            clargs = mips_from_tac_cfg(tac_cfg)
+            for label, node in tac_cfg.nodes(data=True):
+                print(f"{label}:")
+                for instr in node["basic_block"].instructions:
+                    print(' ' * (8 if isinstance(instr, φ_statement) else 0) + str(instr))
+                    
+            print("\nColour Assignment:")
+            colour_assignment = colour_cfg(tac_cfg, print_debug=True)
+            for var, colour in colour_assignment.items():
+                print(f'{var} -> {colour}')
+            print()
+            for label, node in tac_cfg.nodes(data=True):
+                print(f"{label}:")
+                for instr in node["basic_block"].instructions:
+                    print(' ' * (8 if isinstance(instr, φ_statement) else 0) + str(instr))
+            print("\nOut-of-SSA MIPS Assembly:")
+            out_of_ssa(tac_cfg, colour_assignment)
+            for label, node in tac_cfg.nodes(data=True):
+                print(f"{label}:")
+                for instr in node["basic_block"].instructions:
+                    print(' ' * (8 if isinstance(instr, φ_statement) else 0) + str(instr))
+            write_to_file(tac_cfg, clargs, "output.s")
+            print("\nMIPS assembly written to output.s")
