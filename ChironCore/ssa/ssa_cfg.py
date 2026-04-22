@@ -130,6 +130,7 @@ def _walk_dominator_tree(
                 for stmt in cfg.nodes[child]["basic_block"].instructions:
                     if isinstance(stmt, φ_statement) and stmt.dest.name == var.name:
                         stmt.srcs.append(variable(stacks[var.name][-1], var.name))
+                        stmt.preds.append(node)
                         break
 
     for var in stacks:
@@ -176,9 +177,9 @@ def ssa_cfg_from_tac_cfg(cfg: nx.DiGraph[label], dce=True, print_debug: bool = F
 
                 # Insert φ-statement for ``var`` at the start of ``node``.
                 phi_targets[node].add(var)
-                cfg.nodes[node]["basic_block"].instructions.insert(0, φ_statement(variable(var.index, var.name), []))
-                # CAUTION: Here, we use φ_statement(variable(var.index, var.name), []) instead
-                # of φ_statement(var, []) to create a deep copy. This change is made from
+                cfg.nodes[node]["basic_block"].instructions.insert(0, φ_statement(variable(var.index, var.name), [], []))
+                # CAUTION: Here, we use φ_statement(variable(var.index, var.name), [], []) instead
+                # of φ_statement(var, [], []) to create a deep copy. This change is made from
                 # observation.
                 
                 # ``var`` now has a φ-statement in ``node``.
@@ -207,7 +208,9 @@ def ssa_cfg_from_tac_cfg(cfg: nx.DiGraph[label], dce=True, print_debug: bool = F
         bb: basic_block = cfg.nodes[node]["basic_block"]
         for stmt in bb.instructions:
             if isinstance(stmt, φ_statement):
-                stmt.srcs = list(set(stmt.srcs))
+                temp = list(set(zip(stmt.srcs, stmt.preds)))
+                stmt.srcs = [t[0] for t in temp]
+                stmt.preds = [t[1] for t in temp]
 
     # Perform dead code elimination to remove any φ-statements that are not useful.
     if dce:

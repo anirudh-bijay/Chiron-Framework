@@ -242,10 +242,11 @@ class φ_statement(statement):
     ``src2``, etc. are source variables from the predecessor basic blocks.
     '''
 
-    def __init__(self, dest: variable, srcs: list[variable]):
+    def __init__(self, dest: variable, srcs: list[variable], preds: list[label]):
         super().__init__()
         self.dest = dest
         self.srcs = srcs
+        self.preds = preds
 
     def __str__(self):
         return f"{self.dest} = φ({', '.join(str(src) for src in self.srcs)})"
