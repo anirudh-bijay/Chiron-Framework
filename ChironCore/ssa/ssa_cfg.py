@@ -218,7 +218,7 @@ def ssa_cfg_from_tac_cfg(cfg: nx.DiGraph[label], dce=True, print_debug: bool = F
 
     # Print SSA statements for debugging.
     if print_debug:
-        for i in range(len(cfg.nodes)):
-            bb = cfg.nodes[label(i)]["basic_block"]
-            print(f"L{i}:")
+        for node, data in cfg.nodes(data=True):
+            bb = data["basic_block"]
+            print(f"{node}:")
             print("    \n".join(f"  {stmt}" for stmt in bb.instructions))

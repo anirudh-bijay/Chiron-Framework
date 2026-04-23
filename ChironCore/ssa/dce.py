@@ -149,7 +149,7 @@ def _sweep(cfg: nx.DiGraph[label]) -> None:
                 cfg.add_edge(node, last_stmt.target2)
             else:
                 cfg.add_edge(node, last_stmt.target)
-        elif node != cfg.order() - 1:   # Not the exit node.
+        elif node != exit_node:   # Not the exit node.
             cfg.add_edge(node, label(node + 1)) # Fallthrough to the next BB.
 
     # Remove unreachable BBs.
