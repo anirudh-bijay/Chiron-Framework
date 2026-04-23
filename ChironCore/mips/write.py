@@ -23,6 +23,7 @@ def write_to_file(cfg: nx.DiGraph[label], clargs: list[str], filename: str) -> N
             f.write('\n')
         f.write('        .globl  main\n')
         f.write('main:\n')
+        f.write('        .set    noat\n')
         for node in sorted(cfg.nodes):
             f.write(f'{node}:\n')
             for instruction in cfg.nodes[node]['basic_block'].instructions:
@@ -30,3 +31,4 @@ def write_to_file(cfg: nx.DiGraph[label], clargs: list[str], filename: str) -> N
         f.write('\n')
         f.write('        xor     $v0, $v0, $v0\n')
         f.write('        jr      $ra\n')
+        f.write('        .set    at\n')

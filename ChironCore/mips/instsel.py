@@ -24,8 +24,8 @@ def _store_mem(src: operand, base: variable | physical_register, offset: integer
         if src.value == 0:
             yield mips_instruction('sw', [physical_register('$zero'), base, offset])
         else:
-            yield from _assign_temporary(physical_register('$v1'), src)
-            yield mips_instruction('sw', [physical_register('$v1'), base, offset])
+            yield from _assign_temporary(physical_register('$at'), src)
+            yield mips_instruction('sw', [physical_register('$at'), base, offset])
     elif isinstance(src, (variable, physical_register)):
         yield mips_instruction('sw', [src, base, offset])
     elif isinstance(src, uninitialised_constant):
@@ -115,8 +115,8 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                     if stmt.src2.value == 0:
                         phys_reg = physical_register('$zero')
                     else:
-                        yield from _assign_temporary(physical_register('$v1'), stmt.src2)
-                        phys_reg = physical_register('$v1')
+                        yield from _assign_temporary(physical_register('$at'), stmt.src2)
+                        phys_reg = physical_register('$at')
                     yield mips_instruction('addu', [stmt.dest, stmt.src1, phys_reg])
             elif isinstance(stmt.src2, (variable, physical_register)):
                 yield mips_instruction('addu', [stmt.dest, stmt.src1, stmt.src2])
@@ -130,8 +130,8 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                     if stmt.src1.value == 0:
                         phys_reg = physical_register('$zero')
                     else:
-                        yield from _assign_temporary(physical_register('$v1'), integer_constant(stmt.src1.value))
-                        phys_reg = physical_register('$v1')
+                        yield from _assign_temporary(physical_register('$at'), integer_constant(stmt.src1.value))
+                        phys_reg = physical_register('$at')
                     yield mips_instruction('subu', [stmt.dest, phys_reg, stmt.src2])
                 else:
                     raise NotImplementedError(f'Unsupported operand type for binary -: {type(stmt.src2)}')
@@ -141,8 +141,8 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                 elif -(1 << 15) < stmt.src2.value < 1 << 15: # Negation of 16-bit 0xFFFF is again 16-bit 0xFFFF, so we exclude it.
                     yield from _select_binary_assignment(assignment_statement(operator('+'), stmt.dest, stmt.src1, integer_constant(-stmt.src2.value)))
                 else:
-                    yield from _assign_temporary(physical_register('$v1'), integer_constant(stmt.src2.value))
-                    yield mips_instruction('subu', [stmt.dest, stmt.src1, physical_register('$v1')])
+                    yield from _assign_temporary(physical_register('$at'), integer_constant(stmt.src2.value))
+                    yield mips_instruction('subu', [stmt.dest, stmt.src1, physical_register('$at')])
             elif isinstance(stmt.src2, (variable, physical_register)):
                 yield mips_instruction('subu', [stmt.dest, stmt.src1, stmt.src2])
             else:
@@ -160,8 +160,8 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                 elif stmt.src2.value > 0 and (stmt.src2.value & (stmt.src2.value - 1)) == 0: # Power of 2
                     yield mips_instruction('sll', [stmt.dest, stmt.src1, integer_constant(stmt.src2.value.bit_length() - 1)])
                 else:
-                    yield from _assign_temporary(physical_register('$v1'), integer_constant(stmt.src2.value))
-                    yield mips_instruction('mul', [stmt.dest, stmt.src1, physical_register('$v1')])
+                    yield from _assign_temporary(physical_register('$at'), integer_constant(stmt.src2.value))
+                    yield mips_instruction('mul', [stmt.dest, stmt.src1, physical_register('$at')])
             elif isinstance(stmt.src1, integer_constant) and isinstance(stmt.src2, (variable, physical_register)):
                 yield from _select_binary_assignment(assignment_statement(operator('*'), stmt.dest, stmt.src2, stmt.src1))
             elif isinstance(stmt.src1, (variable, physical_register)) and isinstance(stmt.src2, (variable, physical_register)):
@@ -184,16 +184,16 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                     yield from _select_unary_assignment(assignment_statement(operator('-'), stmt.dest, stmt.src1))
                     return
                 else:
-                    yield from _assign_temporary(physical_register('$v1'), integer_constant(stmt.src2.value))
-                    phys_reg = physical_register('$v1')
+                    yield from _assign_temporary(physical_register('$at'), integer_constant(stmt.src2.value))
+                    phys_reg = physical_register('$at')
                 yield mips_instruction('div', [stmt.src1, phys_reg])
                 yield mips_instruction('mflo', [stmt.dest])
             elif isinstance(stmt.src1, integer_constant) and isinstance(stmt.src2, (variable, physical_register)):
                 if stmt.src1.value == 0:
                     yield from _select_unary_assignment(assignment_statement(operator('+'), stmt.dest, integer_constant(0)))
                 else:
-                    yield from _assign_temporary(physical_register('$v1'), integer_constant(stmt.src1.value))
-                    yield mips_instruction('div', [physical_register('$v1'), stmt.src2])
+                    yield from _assign_temporary(physical_register('$at'), integer_constant(stmt.src1.value))
+                    yield mips_instruction('div', [physical_register('$at'), stmt.src2])
                     yield mips_instruction('mflo', [stmt.dest])
             elif isinstance(stmt.src1, (variable, physical_register)) and isinstance(stmt.src2, (variable, physical_register)):
                 yield mips_instruction('div', [stmt.src1, stmt.src2])
@@ -221,8 +221,8 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                     if stmt.src2.value == 0:
                         phys_reg = physical_register('$zero')
                     else:
-                        yield from _assign_temporary(physical_register('$v1'), stmt.src2)
-                        phys_reg = physical_register('$v1')
+                        yield from _assign_temporary(physical_register('$at'), stmt.src2)
+                        phys_reg = physical_register('$at')
                     op = {'>': 'sgt', '<': 'slt', '>=': 'sge', '<=': 'sle', '==': 'seq', '!=': 'sne'}[stmt.op.name]
                     yield mips_instruction(op, [stmt.dest, stmt.src1, phys_reg])
             elif isinstance(stmt.src1, integer_constant) and isinstance(stmt.src2, (variable, physical_register)):
@@ -232,8 +232,8 @@ def _select_binary_assignment(stmt: assignment_statement) -> Generator[mips_inst
                     if stmt.src1.value == 0:
                         phys_reg = physical_register('$zero')
                     else:
-                        yield from _assign_temporary(physical_register('$v1'), stmt.src1)
-                        phys_reg = physical_register('$v1')
+                        yield from _assign_temporary(physical_register('$at'), stmt.src1)
+                        phys_reg = physical_register('$at')
                     op = {'>': 'sgt', '<': 'slt', '>=': 'sge', '<=': 'sle', '==': 'seq', '!=': 'sne'}[stmt.op.name]
                     yield mips_instruction(op, [stmt.dest, phys_reg, stmt.src2])
             elif isinstance(stmt.src1, (variable, physical_register)) and isinstance(stmt.src2, (variable, physical_register)):
@@ -299,9 +299,9 @@ def _select_jump(stmt: jump_statement) -> Generator[mips_instruction]:
                         op = {'>': 'bgt', '<': 'blt', '>=': 'bge', '<=': 'ble'}[stmt.cond.op.name]
                         yield mips_instruction(op, [stmt.cond.src1, physical_register('$zero'), stmt.target1])
                 else:
-                    yield from _assign_temporary(physical_register('$v1'), stmt.cond.src2)
+                    yield from _assign_temporary(physical_register('$at'), stmt.cond.src2)
                     op = {'==': 'beq', '!=': 'bne', '>': 'bgt', '<': 'blt', '>=': 'bge', '<=': 'ble'}[stmt.cond.op.name]
-                    yield mips_instruction(op, [stmt.cond.src1, physical_register('$v1'), stmt.target1])
+                    yield mips_instruction(op, [stmt.cond.src1, physical_register('$at'), stmt.target1])
             case _:
                 raise NotImplementedError(f'Unsupported operator for conditional jump: {stmt.cond.op}')
     elif isinstance(stmt.cond.src1, integer_constant) and isinstance(stmt.cond.src2, (variable, physical_register)):
@@ -309,8 +309,8 @@ def _select_jump(stmt: jump_statement) -> Generator[mips_instruction]:
         yield from _select_jump(jump_statement(stmt.target1, cond=jump_statement.condition(operator(stmt.cond.op.name), stmt.cond.src2, stmt.cond.src1)))
     elif isinstance(stmt.cond.src1, (variable, physical_register)) and isinstance(stmt.cond.src2, (variable, physical_register)):
         if stmt.cond.op.name in {'and', 'or'}:
-            yield mips_instruction(stmt.cond.op.name, [physical_register('$v1'), stmt.cond.src1, stmt.cond.src2])
-            yield mips_instruction('bnez', [physical_register('$v1'), stmt.target1])
+            yield mips_instruction(stmt.cond.op.name, [physical_register('$at'), stmt.cond.src1, stmt.cond.src2])
+            yield mips_instruction('bnez', [physical_register('$at'), stmt.target1])
         else:
             op = {'==': 'beq', '!=': 'bne', '>': 'bgt', '<': 'blt', '>=': 'bge', '<=': 'ble'}[stmt.cond.op.name]
             yield mips_instruction(op, [stmt.cond.src1, stmt.cond.src2, stmt.target1])

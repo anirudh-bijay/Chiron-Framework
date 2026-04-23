@@ -280,12 +280,12 @@ def out_of_ssa(cfg: nx.DiGraph[label], colour_assignment: dict[variable, physica
 
         # Deal with cycles first.
         for cycle in tuple(nx.simple_cycles(beginning_perms[node])):
-            inst_list.append(mips_instruction('move', [physical_register('$v1'), cycle[0]]))
+            inst_list.append(mips_instruction('move', [physical_register('$at'), cycle[0]]))
             for i in range(len(cycle) - 1):
                 dest = cycle[i]
                 src = cycle[i + 1]
                 inst_list.append(mips_instruction('move', [dest, src]))
-            inst_list.append(mips_instruction('move', [cycle[-1], physical_register('$v1')]))
+            inst_list.append(mips_instruction('move', [cycle[-1], physical_register('$at')]))
 
             beginning_perms[node].remove_nodes_from(cycle)
 
@@ -308,12 +308,12 @@ def out_of_ssa(cfg: nx.DiGraph[label], colour_assignment: dict[variable, physica
 
         # Deal with cycles first.
         for cycle in tuple(nx.simple_cycles(ending_perms[node])):
-            inst_list.append(mips_instruction('move', [physical_register('$v1'), cycle[0]]))
+            inst_list.append(mips_instruction('move', [physical_register('$at'), cycle[0]]))
             for i in range(len(cycle) - 1):
                 dest = cycle[i]
                 src = cycle[i + 1]
                 inst_list.append(mips_instruction('move', [dest, src]))
-            inst_list.append(mips_instruction('move', [cycle[-1], physical_register('$v1')]))
+            inst_list.append(mips_instruction('move', [cycle[-1], physical_register('$at')]))
 
             ending_perms[node].remove_nodes_from(cycle)
 
