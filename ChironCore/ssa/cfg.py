@@ -138,4 +138,9 @@ def tac_cfg_from_ir(ir: list[tuple[ChironAST.Instruction, int]], print_debug: bo
         else:
             cfg.add_edge(label(i), label(i + 1))
 
+    # Remove unreachable BBs (those that are not reachable from the entry block).
+    reachable = set(nx.dfs_preorder_nodes(cfg, label(0)))
+    unreachable = [node for node in cfg.nodes if node not in reachable]
+    cfg.remove_nodes_from(unreachable)
+
     return cfg

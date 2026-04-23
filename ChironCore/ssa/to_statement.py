@@ -51,7 +51,7 @@ def _to_operand(expr: ChironAST.Value | ChironAST.BoolFalse | ChironAST.BoolTrue
     else:
         raise TypeError("Unsupported expression type for operand conversion.")
     
-def _optimise_unary_arith(op: operator, dest: variable, src: operand) -> statement:
+def _optimise_unary_arith(op: operator, dest: variable, src: operand) -> Generator[assignment_statement, Any, Any]:
     '''
     Try the following optimisations for unary arithmetic operations:
     - ``x = + x`` can be optimised to ``nop``.
@@ -59,40 +59,138 @@ def _optimise_unary_arith(op: operator, dest: variable, src: operand) -> stateme
     '''
 
     if op == operator('+') and dest == src:
-        return nop_statement()
+        return
     
     if op == operator('-') and isinstance(src, integer_constant):
-        return assignment_statement(operator('+'), dest, integer_constant(-src.value))
+        yield assignment_statement(operator('+'), dest, integer_constant(-src.value))
+        return
     
-    return assignment_statement(op, dest, src)
+    yield assignment_statement(op, dest, src)
 
-def _optimise_binary_arith(op: operator, dest: variable, src1: operand, src2: operand) -> statement:
+def _optimise_binary_arith(op: operator, dest: variable, src1: operand, src2: operand) -> Generator[assignment_statement, Any, Any]:
     if isinstance(src1, integer_constant) and isinstance(src2, integer_constant):
-        return assignment_statement(operator("+"), dest, integer_constant(eval(f"{src1.value} {op.name} {src2.value}")))
+        yield assignment_statement(operator("+"), dest, integer_constant(eval(f"{src1.value} {op.name} {src2.value}")))
+        return
     
     match op:
         case operator(name='+'):
             if src1 == integer_constant(0):
-                return _optimise_unary_arith(operator("+"), dest, src2)
+                yield from _optimise_unary_arith(operator("+"), dest, src2); return
             if src2 == integer_constant(0):
-                return _optimise_unary_arith(operator("+"), dest, src1)
+                yield from _optimise_unary_arith(operator("+"), dest, src1); return
             
         case operator(name='-'):
             if src1 == integer_constant(0):
-                return _optimise_unary_arith(operator('-'), dest, src2)
+                yield from _optimise_unary_arith(operator('-'), dest, src2); return
             
             if src2 == integer_constant(0):
-                return _optimise_unary_arith(operator('+'), dest, src1)
+                yield from _optimise_unary_arith(operator('+'), dest, src1); return
 
         case operator(name='*'):
             if (isinstance(src1, integer_constant) and src1.value == 0) or (isinstance(src2, integer_constant) and src2.value == 0):
-                return assignment_statement(operator("+"), dest, integer_constant(0))
+                yield assignment_statement(operator("+"), dest, integer_constant(0)); return
             if isinstance(src1, integer_constant) and src1.value in (1, -1):
-                return _optimise_unary_arith(operator("+" if src1.value == 1 else "-"), dest, src2)
+                yield from _optimise_unary_arith(operator("+" if src1.value == 1 else "-"), dest, src2); return
             if isinstance(src2, integer_constant) and src2.value in (1, -1):
-                return _optimise_unary_arith(operator("+" if src2.value == 1 else "-"), dest, src1)
+                yield from _optimise_unary_arith(operator("+" if src2.value == 1 else "-"), dest, src1); return
             
-    return assignment_statement(op, dest, src1, src2)
+        case operator(name='/'):
+            if isinstance(src1, integer_constant) and isinstance(src2, integer_constant) and src2.value != 0:
+                yield assignment_statement(operator("+"), dest, integer_constant(src1.value // src2.value)); return
+                # Don't handle division by zero here, just don't perform the optimisation.
+                # The programmer should be allowed to bomb the program.
+            if isinstance(src2, integer_constant) and src2.value in (1, -1):
+                yield from _optimise_unary_arith(operator("+" if src2.value == 1 else "-"), dest, src1); return
+            
+        case _:
+            raise ValueError("Unsupported operator for arithmetic optimisations.")
+
+    yield assignment_statement(op, dest, src1, src2)
+
+def _simplify_arith_expr(expr: ChironAST.ArithExpr | ChironAST.Value) -> ChironAST.ArithExpr | ChironAST.Value:
+    # We will perform simple optimisations on the arithmetic expression,
+    # such as constant folding and simplification of subexpressions
+    # with constant operands, through a postorder traversal of the expression tree.
+
+    if isinstance(expr, ChironAST.Value):
+        return expr
+
+    if isinstance(expr, ChironAST.UnaryArithOp):
+        inner = _simplify_arith_expr(expr.expr)
+            
+        if isinstance(expr, ChironAST.UMinus):
+            if isinstance(inner, ChironAST.Num):
+                return ChironAST.Num(-inner.val)
+            if isinstance(inner, ChironAST.UMinus):
+                return inner.expr # Already simplified recursively.
+            if isinstance(inner, ChironAST.Diff):
+                return ChironAST.Diff(inner.rexpr, inner.lexpr)
+            return ChironAST.UMinus(inner)
+        else:
+            raise TypeError("Unsupported unary operator for arithmetic expression simplification.")
+        
+    if isinstance(expr, ChironAST.BinArithOp):
+        lexpr = _simplify_arith_expr(expr.lexpr)
+        rexpr = _simplify_arith_expr(expr.rexpr)
+        
+        if isinstance(lexpr, ChironAST.Num) and isinstance(rexpr, ChironAST.Num):
+            if isinstance(expr, ChironAST.Div):
+                if rexpr.val == 0:
+                    return ChironAST.Div(lexpr, rexpr) # Don't handle division by zero here.
+                return ChironAST.Num(lexpr.val // rexpr.val)
+            else:
+                return ChironAST.Num(eval(f"{lexpr.val} {expr.symbol} {rexpr.val}"))
+        if isinstance(expr, ChironAST.Sum):
+            if lexpr == ChironAST.Num(0):
+                return rexpr
+            if rexpr == ChironAST.Num(0):
+                return lexpr
+            if isinstance(lexpr, ChironAST.UMinus) and isinstance(rexpr, ChironAST.UMinus):
+                return ChironAST.UMinus(ChironAST.Sum(lexpr.expr, rexpr.expr))
+            return ChironAST.Sum(lexpr, rexpr)
+        if isinstance(expr, ChironAST.Diff):
+            if lexpr == ChironAST.Num(0):
+                return ChironAST.UMinus(rexpr)
+            if rexpr == ChironAST.Num(0):
+                return lexpr
+            if isinstance(lexpr, ChironAST.UMinus) and isinstance(rexpr, ChironAST.UMinus):
+                return ChironAST.Diff(rexpr.expr, lexpr.expr)
+            return ChironAST.Diff(lexpr, rexpr)
+        if isinstance(expr, ChironAST.Mult):
+            if lexpr == ChironAST.Num(0) or rexpr == ChironAST.Num(0):
+                return ChironAST.Num(0)
+            if lexpr == ChironAST.Num(1):
+                return rexpr
+            if rexpr == ChironAST.Num(1):
+                return lexpr
+            if lexpr == ChironAST.Num(-1):
+                return ChironAST.UMinus(rexpr)
+            if rexpr == ChironAST.Num(-1):
+                return ChironAST.UMinus(lexpr)
+            if isinstance(lexpr, ChironAST.UMinus) and isinstance(rexpr, ChironAST.UMinus):
+                return ChironAST.Mult(lexpr.expr, rexpr.expr)
+            if isinstance(lexpr, ChironAST.UMinus):
+                return ChironAST.UMinus(ChironAST.Mult(lexpr.expr, rexpr))
+            if isinstance(rexpr, ChironAST.UMinus):
+                return ChironAST.UMinus(ChironAST.Mult(lexpr, rexpr.expr))
+            return ChironAST.Mult(lexpr, rexpr)
+        if isinstance(expr, ChironAST.Div):
+            # Don't handle division by zero here.
+            if rexpr == ChironAST.Num(1):
+                return lexpr
+            if rexpr == ChironAST.Num(-1):
+                return ChironAST.UMinus(lexpr)
+            if isinstance(lexpr, ChironAST.UMinus) and isinstance(rexpr, ChironAST.UMinus):
+                return ChironAST.Div(lexpr.expr, rexpr.expr)
+            if isinstance(lexpr, ChironAST.UMinus):
+                return ChironAST.UMinus(ChironAST.Div(lexpr.expr, rexpr))
+            if isinstance(rexpr, ChironAST.UMinus):
+                return ChironAST.UMinus(ChironAST.Div(lexpr, rexpr.expr))
+            return ChironAST.Div(lexpr, rexpr)
+        else:
+            raise TypeError(f"Unsupported binary operator (type {type(expr).__name__}) for arithmetic expression simplification.")
+        
+    raise TypeError(f"Unsupported expression type {type(expr).__name__} for arithmetic expression simplification.")
 
 def _traverse_arith_expr(expr: ChironAST.ArithExpr, temp_prefix: str, temp_ctr: int = 0) -> Generator[assignment_statement, Any, Any]:
     # We will flatten the arithmetic expression into a sequence of assignment statements
@@ -102,10 +200,10 @@ def _traverse_arith_expr(expr: ChironAST.ArithExpr, temp_prefix: str, temp_ctr: 
     # to generate the assignment statements in the correct order.
     if isinstance(expr, ChironAST.UnaryArithOp):
         if isinstance(expr.expr, ChironAST.Value):
-            yield assignment_statement(operator(expr.symbol), variable(-1, f"{temp_prefix}{temp_ctr}"), _to_operand(expr.expr))
+            yield from _optimise_unary_arith(operator(expr.symbol), variable(-1, f"{temp_prefix}{temp_ctr}"), _to_operand(expr.expr))
         else:
             yield from _traverse_arith_expr(expr.expr, temp_prefix, temp_ctr)
-            yield assignment_statement(operator(expr.symbol), variable(-1, f"{temp_prefix}{temp_ctr}"), variable(-1, f"{temp_prefix}{temp_ctr}"))
+            yield from _optimise_unary_arith(operator(expr.symbol), variable(-1, f"{temp_prefix}{temp_ctr}"), variable(-1, f"{temp_prefix}{temp_ctr}"))
     
     elif isinstance(expr, ChironAST.BinArithOp):
         if isinstance(expr.lexpr, ChironAST.Value):
@@ -126,7 +224,7 @@ def _traverse_arith_expr(expr: ChironAST.ArithExpr, temp_prefix: str, temp_ctr: 
         else:
             raise TypeError("Unsupported expression type for arithmetic expression conversion.")
         
-        yield assignment_statement(
+        yield from _optimise_binary_arith(
             operator(expr.symbol),
             variable(-1, f"{temp_prefix}{temp_ctr}"),
             src1,
@@ -138,7 +236,8 @@ def _traverse_arith_expr(expr: ChironAST.ArithExpr, temp_prefix: str, temp_ctr: 
 
 def _from_AssignmentCommand(instr: ChironAST.AssignmentCommand, bb_index: int) -> Generator[assignment_statement, Any, Any]:
     dest = variable(-1, instr.lvar.varname)
-
+    instr.rexpr = _simplify_arith_expr(instr.rexpr)
+    
     if isinstance(instr.rexpr, ChironAST.Value):
         src = _to_operand(instr.rexpr)
         op = operator("+")
@@ -154,7 +253,112 @@ def _from_AssignmentCommand(instr: ChironAST.AssignmentCommand, bb_index: int) -
         # Boolean expressions are not assignable, they are only used
         # in branches.
         raise TypeError("Unsupported expression type for assignment statement conversion.")
+
+def _optimise_unary_condition(op: operator, dest: variable, src: operand) -> Generator[assignment_statement, Any, Any]:
+    if op == operator('not') and isinstance(src, integer_constant):
+        yield assignment_statement(operator("+"), dest, integer_constant(0 if src.value else 1))
+        return
+        
+    yield assignment_statement(op, dest, src)
+
+def _optimise_binary_condition(op: operator, dest: variable, src1: operand, src2: operand) -> Generator[assignment_statement, Any, Any]:
+    if isinstance(src1, integer_constant) and isinstance(src2, integer_constant):
+        yield assignment_statement(operator('+'), dest, integer_constant(eval(f"{src1.value} {op.name} {src2.value}")))
+        return
     
+    match op.name:
+        case 'and':
+            if src1 == integer_constant(0) or src2 == integer_constant(0):
+                yield assignment_statement(operator('+'), dest, integer_constant(0)); return
+            if src1 == integer_constant(1):
+                yield from _optimise_unary_arith(operator('+'), dest, src2); return
+            if src2 == integer_constant(1):
+                yield from _optimise_unary_arith(operator('+'), dest, src1); return
+            
+        case 'or':
+            if src1 == integer_constant(1) or src2 == integer_constant(1):
+                yield assignment_statement(operator('+'), dest, integer_constant(1)); return
+            if src1 == integer_constant(0):
+                yield from _optimise_unary_arith(operator('+'), dest, src2); return
+            if src2 == integer_constant(0):
+                yield from _optimise_unary_arith(operator('+'), dest, src1); return
+            
+        case '<' | '>' | '<=' | '>=' | '==' | '!=':
+            if isinstance(src1, integer_constant) and isinstance(src2, integer_constant):
+                yield assignment_statement(operator('+'), dest, integer_constant(eval(f"{src1.value} {op.name} {src2.value}")))
+                return
+            
+        case _:
+            raise ValueError("Unsupported operator for condition optimisations.")
+
+    yield assignment_statement(op, dest, src1, src2)
+
+def _simplify_condition_expr(expr: ChironAST.BoolExpr) -> ChironAST.BoolExpr:
+    # We will perform simple optimisations on the condition expression,
+    # such as constant folding and simplification of subexpressions
+    # with constant operands, through a postorder traversal of the expression tree.
+
+    if isinstance(expr, ChironAST.BoolFalse) or isinstance(expr, ChironAST.BoolTrue):
+        return expr
+    
+    if isinstance(expr, ChironAST.NOT):
+        inner = _simplify_condition_expr(expr.expr)
+        if isinstance(inner, ChironAST.BoolFalse):
+            return ChironAST.BoolTrue()
+        if isinstance(inner, ChironAST.BoolTrue):
+            return ChironAST.BoolFalse()
+        if isinstance(inner, ChironAST.NOT):
+            return inner.expr # Already simplified recursively.
+        if isinstance(inner, (ChironAST.GT, ChironAST.LT, ChironAST.GTE, ChironAST.LTE, ChironAST.EQ, ChironAST.NEQ)):
+            op_map = {
+                ChironAST.GT: ChironAST.LTE,
+                ChironAST.LT: ChironAST.GTE,
+                ChironAST.GTE: ChironAST.LT,
+                ChironAST.LTE: ChironAST.GT,
+                ChironAST.EQ: ChironAST.NEQ,
+                ChironAST.NEQ: ChironAST.EQ
+            }
+            return op_map[type(inner)](inner.lexpr, inner.rexpr)
+        return ChironAST.NOT(inner)
+    
+    if isinstance(expr, ChironAST.BinCondOp):
+        if isinstance(expr, ChironAST.AND):
+            lexpr = _simplify_condition_expr(expr.lexpr)
+            rexpr = _simplify_condition_expr(expr.rexpr)
+
+            if lexpr == ChironAST.BoolFalse() or rexpr == ChironAST.BoolFalse():
+                return ChironAST.BoolFalse()
+            if lexpr == ChironAST.BoolTrue():
+                return rexpr
+            if rexpr == ChironAST.BoolTrue():
+                return lexpr
+            if isinstance(lexpr, ChironAST.NOT) and isinstance(rexpr, ChironAST.NOT):
+                return ChironAST.NOT(ChironAST.OR(lexpr.expr, rexpr.expr))
+            return ChironAST.AND(lexpr, rexpr)
+        if isinstance(expr, ChironAST.OR):
+            lexpr = _simplify_condition_expr(expr.lexpr)
+            rexpr = _simplify_condition_expr(expr.rexpr)
+            
+            if lexpr == ChironAST.BoolTrue() or rexpr == ChironAST.BoolTrue():
+                return ChironAST.BoolTrue()
+            if lexpr == ChironAST.BoolFalse():
+                return rexpr
+            if rexpr == ChironAST.BoolFalse():
+                return lexpr
+            if isinstance(lexpr, ChironAST.NOT) and isinstance(rexpr, ChironAST.NOT):
+                return ChironAST.NOT(ChironAST.AND(lexpr.expr, rexpr.expr))
+            return ChironAST.OR(lexpr, rexpr)
+        if isinstance(expr, (ChironAST.GT, ChironAST.LT, ChironAST.GTE, ChironAST.LTE, ChironAST.EQ, ChironAST.NEQ)):
+            lexpr = _simplify_arith_expr(expr.lexpr)
+            rexpr = _simplify_arith_expr(expr.rexpr)
+
+            if isinstance(lexpr, ChironAST.Num) and isinstance(rexpr, ChironAST.Num):
+                return ChironAST.BoolTrue() if eval(f"{lexpr.val} {expr.symbol} {rexpr.val}") else ChironAST.BoolFalse()
+            return type(expr)(lexpr, rexpr)
+        raise TypeError(f"Unsupported boolean operator (type {type(expr).__name__}) for condition expression simplification.")
+    
+    return expr    
+
 def _traverse_condition_expr(expr: ChironAST.BoolExpr, temp_prefix: str, temp_ctr: int = 0) -> Generator[assignment_statement, Any, Any]:
     if isinstance(expr, ChironAST.BoolExpr):
         # We will flatten the condition into a sequence of assignment statements
@@ -168,10 +372,10 @@ def _traverse_condition_expr(expr: ChironAST.BoolExpr, temp_prefix: str, temp_ct
             # and then compute the value of the NOT operation into the same
             # variable, which is returned.
             if isinstance(expr.expr, (ChironAST.BoolFalse, ChironAST.BoolTrue)):
-                yield assignment_statement(operator("not"), variable(-1, f"{temp_prefix}{temp_ctr}"), _to_operand(expr.expr))
+                yield from _optimise_unary_condition(operator("not"), variable(-1, f"{temp_prefix}{temp_ctr}"), _to_operand(expr.expr))
             else:
                 yield from _traverse_condition_expr(expr.expr, temp_prefix, temp_ctr)
-                yield assignment_statement(operator("not"), variable(-1, f"{temp_prefix}{temp_ctr}"), variable(-1, f"{temp_prefix}{temp_ctr}"))   
+                yield from _optimise_unary_condition(operator("not"), variable(-1, f"{temp_prefix}{temp_ctr}"), variable(-1, f"{temp_prefix}{temp_ctr}"))   
         elif isinstance(expr, (ChironAST.BinCondOp)):
             # We will compute the values of the left and right subexpressions
             # into variables, and then compute the value of the binary condition
@@ -201,7 +405,7 @@ def _traverse_condition_expr(expr: ChironAST.BoolExpr, temp_prefix: str, temp_ct
             else:
                 raise TypeError("Unsupported boolean expression type for condition command conversion.")
 
-            yield assignment_statement(
+            yield from _optimise_binary_condition(
                 operator(expr.symbol),
                 variable(-1, f"{temp_prefix}{temp_ctr}"),
                 src1,
@@ -209,6 +413,8 @@ def _traverse_condition_expr(expr: ChironAST.BoolExpr, temp_prefix: str, temp_ct
             )     
         else:
             raise TypeError("Unsupported boolean expression type for condition command conversion.")
+    else:
+        raise TypeError("Argument expr to _traverse_condition_expr must be of type ChironAST.BoolExpr.")
 
 def _negate_condition(expr: ChironAST.BoolExpr) -> ChironAST.BoolExpr:
     '''
@@ -216,38 +422,13 @@ def _negate_condition(expr: ChironAST.BoolExpr) -> ChironAST.BoolExpr:
     and return the result (as an AST subtree).
     '''
 
-    op_map = {
-        "<": ">=",
-        ">": "<=",
-        "<=": ">",
-        ">=": "<",
-        "==": "!=",
-        "!=": "=="
-    }
-
-    if isinstance(expr, ChironAST.BoolFalse):
-        return ChironAST.BoolTrue()
-    
-    if isinstance(expr, ChironAST.BoolTrue):
-        return ChironAST.BoolFalse()
-
-    if isinstance(expr, ChironAST.NOT):
-        return expr.expr
-    
-    if isinstance(expr, ChironAST.BinCondOp):
-        if expr.symbol in op_map:
-            return ChironAST.BinCondOp(expr.lexpr, expr.rexpr, op_map[expr.symbol])
-        
-        if expr.symbol in ("and", "or"):
-            return ChironAST.NOT(expr)
-
-        raise ValueError("Unsupported boolean operator for condition negation.")
-
-    raise ValueError("Unsupported operator for condition negation.")
+    return _simplify_condition_expr(ChironAST.NOT(expr))
 
 def _from_ConditionCommand(instr: ChironAST.ConditionCommand, bb_index: int, target_index: int, fallthrough_index: int)\
       -> Generator[statement, Any, Any]:
     if isinstance(instr, ChironAST.ConditionCommand):
+        instr.cond = _simplify_condition_expr(instr.cond)
+        
         if isinstance(instr.cond, ChironAST.BoolFalse):
             yield jump_statement(label(target_index))
         
