@@ -89,7 +89,7 @@ class integer_constant(constant):
         '''
         
         super().__init__()
-        self._value = value
+        self._value = int(value)
 
     @property
     def value(self) -> int:
