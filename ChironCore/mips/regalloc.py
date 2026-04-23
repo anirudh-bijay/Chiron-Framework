@@ -326,7 +326,7 @@ def out_of_ssa(cfg: nx.DiGraph[label], colour_assignment: dict[variable, physica
                 inst_list.append(mips_instruction('move', [dest, src]))
 
         # Append the copy instructions.
-        jump = bb.instructions.pop() if bb.instructions and bb.instructions[-1].name.startswith(('j', 'b')) else None
+        jump = bb.instructions.pop() if bb.instructions and bb.instructions[-1].name.startswith(('j', 'b')) else None # type: ignore
         bb.instructions.extend(inst_list)
         if jump:
             bb.instructions.append(jump)
