@@ -45,7 +45,7 @@ class mips_instruction(statement):
             return self.operands[0:2] # type: ignore
         elif self.name in {'beqz', 'bnez'}:
             return [self.operands[0]] # type: ignore
-        return [op for op in self.operands[1:] if isinstance(op, operand)]
+        return [op for op in self.operands[1:] if isinstance(op, (operand, int))]
     
     @property
     def dest(self) -> Optional[operand]:
