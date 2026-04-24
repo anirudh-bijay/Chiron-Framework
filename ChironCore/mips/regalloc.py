@@ -187,7 +187,7 @@ def evict(cfg: nx.DiGraph[label], node: label, index: int, in_regs: set[variable
             if v not in memmap:
                 global next_stack_offset
                 memmap[v] = next_stack_offset
-                next_stack_offset += 4
+                next_stack_offset -= 4
                 
             cfg.nodes[node]['new_instructions'][index].insert(
                 0,
@@ -223,7 +223,7 @@ def spill_furthest_first_bb(cfg: nx.DiGraph[label], node: label, in_regs: set[va
                         print(f'Warning: Variable {v} loaded before being spilled.', file=sys.stderr)
                         global next_stack_offset
                         memmap[v] = next_stack_offset
-                        next_stack_offset += 4
+                        next_stack_offset -= 4
 
                     cfg.nodes[node]['new_instructions'][i].append(
                         mips_instruction('lw', [v, physical_register('$sp'), integer_constant(memmap[v])])
@@ -377,7 +377,7 @@ def _colour_recursive(
                     if stmt.dest not in memmap:
                         global next_stack_offset
                         memmap[stmt.dest] = next_stack_offset
-                        next_stack_offset += 4
+                        next_stack_offset -= 4
                     colour_assignment[stmt.dest] = memmap[stmt.dest]
             assigned_colours.add(colour_assignment[stmt.dest])
 
