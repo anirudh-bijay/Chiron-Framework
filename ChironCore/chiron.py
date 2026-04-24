@@ -483,4 +483,6 @@ if __name__ == "__main__":
                 for instr in node["basic_block"].instructions:
                     print(' ' * (8 if isinstance(instr, φ_statement) else 0) + str(instr))
             write_to_file(tac_cfg, clargs, "output.s")
-            print("\nMIPS assembly written to output.s")
+            print("\nMIPS assembly written to output.s.")
+            print("See file for command-line arguments and the order in which")
+            print("to pass them.")
