@@ -172,9 +172,9 @@ $ python3 chiron.py --help
 
 Chiron v1.0.1
 ------------
-usage: chiron.py [-h] [-p] [-r] [-gr] [-b] [-z] [-t TIMEOUT] [-d PARAMS] [-c CONSTPARAMS] [-se] [-ai] [-dfa] [-sbfl]
-                 [-bg BUGGY] [-vars INPUTVARSLIST] [-nt NTESTS] [-pop POPSIZE] [-cp CXPB] [-mp MUTPB] [-ng NGEN]
-                 [-vb VERBOSE]
+usage: chiron.py [-h] [-p] [-r] [-mips] [-3ac] [-ssa] [-no_ssa_dce] [-gr] [-b] [-k] [-z] [-t TIMEOUT] [-d PARAMS]
+                 [-c CONSTPARAMS] [-se] [-ai] [-dfa] [-sbfl] [-bg BUGGY] [-vars INPUTVARSLIST] [-nt NTESTS]
+                 [-pop POPSIZE] [-cp CXPB] [-mp MUTPB] [-cfg_gen] [-cfg_dump] [-dump] [-ng NGEN] [-vb VERBOSE]
                  progfl
 
 Program Analysis Framework for ChironLang Programs.
@@ -186,6 +186,12 @@ options:
   -h, --help            show this help message and exit
   -p, --ir              pretty printing the IR of a Chiron program to stdout (terminal)
   -r, --run             execute Chiron program, the figure/shapes the turle draws is shown in a UI.
+  -mips, --mips_asm     compile Chiron program to MIPS assembly.
+  -3ac, --three_address_code
+                        convert Chiron IR to three address code and print the result to stdout.
+  -ssa, --ssa           convert Chiron IR to SSA form and print the result to stdout.
+  -no_ssa_dce, --no_ssa_dce
+                        do not perform dead code elimination in SSA form; print the semi-pruned SSA form
   -gr, --fuzzer_gen_rand
                         Generate random input seeds for the fuzzer before fuzzing starts.
   -b, --bin             load binary IR of a Chiron program
@@ -237,8 +243,9 @@ Chiron v5.3
     ╚█████╔╝██║░░██║██║██║░░██║╚█████╔╝██║░╚███║
     ░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░╚═╝░╚════╝░╚═╝░░╚══╝
     
-usage: chiron.py [-h] [-p] [-r] [-gr] [-b] [-k] [-z] [-t TIMEOUT] [-d PARAMS] [-c CONSTPARAMS] [-se] [-ai] [-dfa] [-sbfl] [-bg BUGGY] [-vars INPUTVARSLIST] [-nt NTESTS] [-pop POPSIZE]
-                 [-cp CXPB] [-mp MUTPB] [-cfg_gen] [-cfg_dump] [-dump] [-ng NGEN] [-vb VERBOSE]
+usage: chiron.py [-h] [-p] [-r] [-mips] [-3ac] [-ssa] [-no_ssa_dce] [-gr] [-b] [-k] [-z] [-t TIMEOUT] [-d PARAMS]
+                 [-c CONSTPARAMS] [-se] [-ai] [-dfa] [-sbfl] [-bg BUGGY] [-vars INPUTVARSLIST] [-nt NTESTS]
+                 [-pop POPSIZE] [-cp CXPB] [-mp MUTPB] [-cfg_gen] [-cfg_dump] [-dump] [-ng NGEN] [-vb VERBOSE]
                  progfl
 
 Program Analysis Framework for ChironLang Programs.
@@ -250,6 +257,12 @@ options:
   -h, --help            show this help message and exit
   -p, --ir              pretty printing the IR of a Chiron program to stdout (terminal)
   -r, --run             execute Chiron program, the figure/shapes the turle draws is shown in a UI.
+  -mips, --mips_asm     compile Chiron program to MIPS assembly.
+  -3ac, --three_address_code
+                        convert Chiron IR to three address code and print the result to stdout.
+  -ssa, --ssa           convert Chiron IR to SSA form and print the result to stdout.
+  -no_ssa_dce, --no_ssa_dce
+                        do not perform dead code elimination in SSA form; print the semi-pruned SSA form
   -gr, --fuzzer_gen_rand
                         Generate random input seeds for the fuzzer before fuzzing starts.
   -b, --bin             load binary IR of a Chiron program
